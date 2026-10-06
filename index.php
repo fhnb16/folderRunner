@@ -207,8 +207,8 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
         }
 
         ::-webkit-scrollbar {
-            width: 9px;
-            height: 9px;
+            width: 8px;
+            height: 8px;
         }
 
         ::-webkit-scrollbar-track {
@@ -224,28 +224,32 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
             background: #b5b3b3;
         }
 
-        body {
+        html, body {
+            height: 100%;
+            height: 100dvh;
             margin: 0;
             padding: 0;
+            overflow: hidden; /* Document-level scroll disabled completely */
             background-color: var(--color-steam-deep);
             color: var(--color-text-main);
             font-family: var(--font-family-base);
             font-size: 13px;
             line-height: 1.5;
-            min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
 
         .explorer-header {
+            flex-shrink: 0;
             background: linear-gradient(180deg, var(--color-top-bar-background) 0%, #151515 100%);
             border-bottom: 1px solid #333333;
-            padding: 18px 24px;
+            padding: 14px 24px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            z-index: 20;
         }
 
         .explorer-header__inner {
-            max-width: 1500px;
+            max-width: 100%;
             margin: 0 auto;
             display: flex;
             align-items: center;
@@ -261,8 +265,8 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
         }
 
         .explorer-header__logo {
-            width: 36px;
-            height: 36px;
+            width: 34px;
+            height: 34px;
             background: #2a475e;
             border-radius: 4px;
             display: flex;
@@ -270,11 +274,12 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
             justify-content: center;
             color: var(--color-steam-blue);
             box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.5);
+            flex-shrink: 0;
         }
 
         .explorer-header__heading {
             margin: 0;
-            font-size: 19px;
+            font-size: 18px;
             font-weight: 700;
             letter-spacing: 0.8px;
             text-transform: uppercase;
@@ -282,8 +287,8 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
         }
 
         .explorer-header__subheading {
-            margin: 3px 0 0 0;
-            font-size: 12px;
+            margin: 2px 0 0 0;
+            font-size: 11px;
             color: var(--color-text-dim);
             font-weight: 400;
         }
@@ -291,14 +296,14 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
         .explorer-header__stats {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
             font-size: 12px;
             color: var(--color-text-dim);
         }
 
         .explorer-header__stat-item {
             background: rgba(0, 0, 0, 0.3);
-            padding: 6px 12px;
+            padding: 5px 10px;
             border-radius: 3px;
             border: 1px solid #2e2e2e;
         }
@@ -308,13 +313,15 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
         }
 
         .explorer-toolbar {
+            flex-shrink: 0;
             background-color: var(--color-editor-background);
             border-bottom: 1px solid #3c3c3c;
-            padding: 10px 24px;
+            padding: 8px 24px;
+            z-index: 15;
         }
 
         .explorer-toolbar__inner {
-            max-width: 1500px;
+            max-width: 100%;
             margin: 0 auto;
             display: flex;
             align-items: center;
@@ -327,6 +334,7 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
             position: relative;
             flex: 1;
             max-width: 480px;
+            min-width: 220px;
         }
 
         .explorer-toolbar__search-input {
@@ -334,9 +342,9 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
             background: #1e1e1e;
             border: 1px solid #4a4a4a;
             border-radius: 3px;
-            padding: 7px 12px 7px 32px;
+            padding: 6px 12px 6px 32px;
             color: #ffffff;
-            font-size: 13px;
+            font-size: 12px;
             outline: none;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
@@ -362,13 +370,12 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
             gap: 8px;
         }
 
-        /* STEAM BUTTON STYLING (Derived from .btnv6_blue_hoverfade) */
         .button-steam {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
-            padding: 6px 14px;
+            padding: 5px 12px;
             border-radius: 2px;
             font-size: 12px;
             font-weight: 500;
@@ -378,6 +385,7 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
             outline: none;
             transition: background 0.2s ease, color 0.2s ease, filter 0.2s ease;
             user-select: none;
+            white-space: nowrap;
         }
 
         .button-steam--primary {
@@ -408,46 +416,114 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
         }
 
         .explorer-workspace {
-            flex: 1;
+            flex: 1 1 0;
+            min-height: 0;
+            height: 100%;
             display: flex;
-            height: calc(100vh - 128px);
             overflow: hidden;
             background: #121417;
+            position: relative;
         }
 
         .explorer-workspace__tree-panel {
-            flex: 1;
+            flex: 1 1 auto;
             min-width: 320px;
-            overflow-y: auto;
-            padding: 16px 24px;
+            height: 100%;
+            overflow-y: auto; /* Independent tree scrolling */
+            overflow-x: hidden;
+            padding: 16px 20px;
             background-color: #171a21;
         }
 
         .explorer-workspace__tree-panel--previewing {
-            flex: 0 0 460px;
-            max-width: 480px;
-            border-right: 2px solid #232c3d;
+            /* Generous width allocation to prevent squeezing */
+            flex: 0 0 520px;
+            width: 520px;
+            max-width: calc(100% - 350px);
+        }
+
+        .explorer-workspace__tree-panel--hidden {
+            display: none !important;
+        }
+
+        .explorer-workspace__resizer {
+            width: 6px;
+            background-color: #1c2430;
+            border-left: 1px solid #283547;
+            border-right: 1px solid #11151c;
+            cursor: col-resize;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            z-index: 15;
+            user-select: none;
+            transition: background-color 0.15s ease;
+        }
+
+        .explorer-workspace__resizer--active {
+            display: flex;
+        }
+
+        .explorer-workspace__resizer:hover,
+        .explorer-workspace__resizer--dragging {
+            background-color: var(--color-steam-cyan);
+        }
+
+        .explorer-workspace__resizer-grip {
+            width: 2px;
+            height: 36px;
+            background-color: #495e79;
+            border-radius: 1px;
+            pointer-events: none;
+        }
+
+        .explorer-workspace__resizer:hover .explorer-workspace__resizer-grip,
+        .explorer-workspace__resizer--dragging .explorer-workspace__resizer-grip {
+            background-color: #ffffff;
         }
 
         .explorer-workspace__viewer-panel {
-            flex: 1;
+            flex: 1 1 0;
+            min-width: 320px;
+            height: 100%;
             display: none;
             flex-direction: column;
             background: #000000;
             position: relative;
+            overflow: hidden;
         }
 
         .explorer-workspace__viewer-panel--active {
             display: flex;
         }
 
+        .explorer-workspace__viewer-panel--maximized {
+            flex: 1 1 100% !important;
+            width: 100% !important;
+        }
+
+        .explorer-workspace__overlay-drag-shield {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 99;
+            cursor: col-resize;
+        }
+
+        .explorer-workspace__overlay-drag-shield--active {
+            display: block;
+        }
+
         .tree-container {
-            max-width: 1400px;
-            margin: 0 auto;
+            max-width: 100%;
         }
 
         .tree-node {
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             user-select: none;
         }
 
@@ -457,7 +533,7 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
             gap: 8px;
             background: #202b3c;
             border-left: 3px solid #3d6c9b;
-            padding: 8px 12px;
+            padding: 7px 10px;
             cursor: pointer;
             border-radius: 2px;
             transition: background 0.15s ease, border-color 0.15s ease;
@@ -472,10 +548,11 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
             font-family: var(--font-family-mono);
             font-weight: 700;
             color: var(--color-steam-blue);
-            width: 20px;
+            width: 18px;
             display: inline-block;
             text-align: center;
             font-size: 13px;
+            flex-shrink: 0;
         }
 
         .tree-node__icon {
@@ -483,6 +560,7 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
             align-items: center;
             justify-content: center;
             color: var(--color-icon-color);
+            flex-shrink: 0;
         }
 
         .tree-node__icon--folder {
@@ -502,17 +580,21 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
             font-weight: 600;
             color: #ffffff;
             font-size: 13px;
-            flex: 1;
-            word-break: break-word;
+            flex: 1 1 auto;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .tree-node__badge {
             font-size: 10px;
             text-transform: uppercase;
-            padding: 2px 6px;
+            padding: 2px 5px;
             border-radius: 2px;
             font-weight: 700;
             letter-spacing: 0.5px;
+            flex-shrink: 0;
         }
 
         .tree-node__badge--count {
@@ -538,10 +620,11 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
             font-size: 11px;
             color: #627284;
             white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .tree-node__content {
-            margin-top: 4px;
+            margin-top: 3px;
             display: block;
         }
 
@@ -564,12 +647,13 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
         .tree-node__row {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 6px 10px;
+            gap: 8px;
+            padding: 5px 8px;
             background: #182230;
             border: 1px solid #212d3d;
             border-radius: 2px;
             transition: background 0.15s ease, border-color 0.15s ease;
+            min-width: 0; /* Critical: allows flex item to shrink and truncate smoothly */
         }
 
         .tree-node__row:hover {
@@ -586,38 +670,45 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
             font-family: var(--font-family-mono);
             font-size: 12px;
             color: #dbe4ec;
-            flex: 1;
-            word-break: break-all;
+            flex: 1 1 0;
+            min-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
         }
 
         .tree-node__meta {
             font-size: 11px;
             color: #728294;
             white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .tree-node__actions {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
             white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .viewer-header {
+            flex-shrink: 0;
             background: #161a21;
             border-bottom: 1px solid #283447;
-            padding: 8px 16px;
+            padding: 8px 14px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            flex-wrap: wrap;
         }
 
         .viewer-header__info {
             display: flex;
             align-items: center;
             gap: 10px;
+            min-width: 0;
             overflow: hidden;
         }
 
@@ -629,6 +720,7 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
             border-radius: 2px;
             text-transform: uppercase;
             font-weight: 700;
+            flex-shrink: 0;
         }
 
         .viewer-header__filename {
@@ -644,14 +736,18 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
         .viewer-header__actions {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            flex-shrink: 0;
         }
 
         .viewer-frame {
+            flex: 1 1 0;
+            min-height: 0;
             width: 100%;
             height: 100%;
             border: none;
             background-color: #ffffff;
+            display: block;
         }
 
         .viewer-toast {
@@ -678,19 +774,16 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
         }
 
         @media (max-width: 900px) {
+            .explorer-workspace__tree-panel--previewing {
+                width: 100%;
+                max-width: 100%;
+                flex: 1 1 350px;
+            }
             .explorer-workspace {
                 flex-direction: column;
-                height: auto;
             }
-            .explorer-workspace__tree-panel--previewing {
-                flex: 1 1 auto;
-                max-width: 100%;
-                border-right: none;
-                border-bottom: 2px solid #232c3d;
-                height: 380px;
-            }
-            .explorer-workspace__viewer-panel {
-                height: 600px;
+            .explorer-workspace__resizer {
+                display: none !important;
             }
         }
     </style>
@@ -701,7 +794,7 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
         <div class="explorer-header__inner">
             <div class="explorer-header__title-group">
                 <div class="explorer-header__logo">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-1 8h-3v3h-2v-3h-3v-2h3V9h2v3h3v2z"/>
                     </svg>
                 </div>
@@ -726,7 +819,7 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
         <div class="explorer-toolbar__inner">
             <div class="explorer-toolbar__search-box">
                 <span class="explorer-toolbar__search-icon">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
                     </svg>
                 </span>
@@ -752,6 +845,10 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
     </section>
 
     <main class="explorer-workspace" id="explorerWorkspace">
+        <!-- Shield to prevent iframe from trapping mouse events during resize dragging -->
+        <div class="explorer-workspace__overlay-drag-shield" id="dragShield"></div>
+
+        <!-- Left independent tree panel -->
         <div class="explorer-workspace__tree-panel" id="treePanel">
             <div class="tree-container" id="treeRoot">
                 <?php if ($tree['totalExecutableFiles'] === 0 && empty($tree['dirs'])): ?>
@@ -764,6 +861,12 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
             </div>
         </div>
 
+        <!-- Draggable resizer handle -->
+        <div class="explorer-workspace__resizer" id="workspaceResizer" title="Потяните для изменения пропорций окна">
+            <div class="explorer-workspace__resizer-grip"></div>
+        </div>
+
+        <!-- Right independent runner viewer panel -->
         <section class="explorer-workspace__viewer-panel" id="viewerPanel">
             <div class="viewer-header">
                 <div class="viewer-header__info">
@@ -771,17 +874,42 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
                     <span class="viewer-header__filename" id="viewerFilename">Файл не выбран</span>
                 </div>
                 <div class="viewer-header__actions">
-                    <button type="button" class="button-steam button-steam--secondary button-steam--small" onclick="TreeExplorer.reloadFrame()" title="Перезагрузить страницу во фрейме">
+                    <button type="button" 
+                            id="btnToggleSidebar"
+                            class="button-steam button-steam--secondary button-steam--small" 
+                            onclick="TreeExplorer.toggleSidebar()" 
+                            title="Скрыть/показать панель со списком файлов">
+                        <span>&#9776; Меню</span>
+                    </button>
+                    <button type="button" 
+                            id="btnToggleMaximize"
+                            class="button-steam button-steam--secondary button-steam--small" 
+                            onclick="TreeExplorer.toggleMaximize()" 
+                            title="Развернуть просмотр на весь экран">
+                        <span>&#x26F6; Во весь экран</span>
+                    </button>
+                    <button type="button" 
+                            class="button-steam button-steam--secondary button-steam--small" 
+                            onclick="TreeExplorer.reloadFrame()" 
+                            title="Перезагрузить страницу во фрейме">
                         <span>&circlearrowright; Перезапуск</span>
                     </button>
-                    <a id="viewerExternalLink" href="#" target="_blank" rel="noopener noreferrer" class="button-steam button-steam--primary button-steam--small">
+                    <a id="viewerExternalLink" 
+                       href="#" 
+                       target="_blank" 
+                       rel="noopener noreferrer" 
+                       class="button-steam button-steam--primary button-steam--small">
                         <span>В отдельном окне &nearr;</span>
                     </a>
-                    <button type="button" class="button-steam button-steam--secondary button-steam--small" onclick="TreeExplorer.closeViewer()" title="Закрыть предпросмотр">
+                    <button type="button" 
+                            class="button-steam button-steam--secondary button-steam--small" 
+                            onclick="TreeExplorer.closeViewer()" 
+                            title="Закрыть предпросмотр">
                         <span>&times; Закрыть</span>
                     </button>
                 </div>
             </div>
+            <!-- Embedded iframe with fully autonomous scroll -->
             <iframe id="runnerFrame" class="viewer-frame" src="about:blank"></iframe>
         </section>
     </main>
@@ -791,6 +919,11 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
     <script>
         const TreeExplorer = (function() {
             let activeUrl = null;
+            let isDragging = false;
+            let startX = 0;
+            let startWidth = 520;
+            let isSidebarHidden = false;
+            let isMaximized = false;
 
             function toggle(id) {
                 const btn = document.getElementById('btn_' + id);
@@ -827,18 +960,15 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
                 const dirNodes = document.querySelectorAll('.tree-node--dir');
 
                 if (term === '') {
-                    // Reset all displays
                     fileNodes.forEach(f => f.style.display = '');
                     dirNodes.forEach(d => d.style.display = '');
                     return;
                 }
 
-                // First hide all
                 fileNodes.forEach(f => {
                     const name = f.getAttribute('data-name') || '';
                     if (name.includes(term)) {
                         f.style.display = '';
-                        // Open all parent directories
                         let parent = f.parentElement;
                         while (parent && parent.id !== 'treeRoot') {
                             if (parent.classList.contains('tree-node__content')) {
@@ -857,27 +987,21 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
                     }
                 });
 
-                // Clean empty directories in search view
                 dirNodes.forEach(d => {
                     const visibleFiles = d.querySelectorAll('.tree-node--file:not([style*="display: none"])');
-                    if (visibleFiles.length === 0) {
-                        d.style.display = 'none';
-                    } else {
-                        d.style.display = '';
-                    }
+                    d.style.display = visibleFiles.length === 0 ? 'none' : '';
                 });
             }
 
             function runFile(url, fileName) {
                 activeUrl = url;
-                const workspace = document.getElementById('explorerWorkspace');
                 const treePanel = document.getElementById('treePanel');
                 const viewerPanel = document.getElementById('viewerPanel');
                 const runnerFrame = document.getElementById('runnerFrame');
                 const filenameLabel = document.getElementById('viewerFilename');
                 const externalLink = document.getElementById('viewerExternalLink');
+                const resizer = document.getElementById('workspaceResizer');
 
-                // Highlight active row
                 document.querySelectorAll('.tree-node__row').forEach(row => {
                     row.classList.remove('tree-node__row--active');
                 });
@@ -887,15 +1011,21 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
                     activeEventEl.classList.add('tree-node__row--active');
                 }
 
-                // Activate split-viewer view
+                // Activate split-viewer view with generous, readable width
                 treePanel.classList.add('explorer-workspace__tree-panel--previewing');
+                treePanel.classList.remove('explorer-workspace__tree-panel--hidden');
                 viewerPanel.classList.add('explorer-workspace__viewer-panel--active');
+                viewerPanel.classList.remove('explorer-workspace__viewer-panel--maximized');
+                resizer.classList.add('explorer-workspace__resizer--active');
+
+                isSidebarHidden = false;
+                isMaximized = false;
+
                 filenameLabel.textContent = fileName + ' (' + url + ')';
                 externalLink.href = url;
 
-                // Load iframe safely
                 runnerFrame.src = url;
-                showToast('Запущен файл: ' + fileName);
+                showToast('Запущен: ' + fileName);
             }
 
             function reloadFrame() {
@@ -906,18 +1036,98 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
                 }
             }
 
+            function toggleSidebar() {
+                const treePanel = document.getElementById('treePanel');
+                const resizer = document.getElementById('workspaceResizer');
+                isSidebarHidden = !isSidebarHidden;
+
+                if (isSidebarHidden) {
+                    treePanel.classList.add('explorer-workspace__tree-panel--hidden');
+                    resizer.style.display = 'none';
+                    showToast('Меню скрыто');
+                } else {
+                    treePanel.classList.remove('explorer-workspace__tree-panel--hidden');
+                    resizer.style.display = 'flex';
+                    showToast('Меню показано');
+                }
+            }
+
+            function toggleMaximize() {
+                const treePanel = document.getElementById('treePanel');
+                const viewerPanel = document.getElementById('viewerPanel');
+                const resizer = document.getElementById('workspaceResizer');
+                isMaximized = !isMaximized;
+
+                if (isMaximized) {
+                    treePanel.classList.add('explorer-workspace__tree-panel--hidden');
+                    viewerPanel.classList.add('explorer-workspace__viewer-panel--maximized');
+                    resizer.style.display = 'none';
+                    showToast('Полноэкранный просмотр');
+                } else {
+                    treePanel.classList.remove('explorer-workspace__tree-panel--hidden');
+                    viewerPanel.classList.remove('explorer-workspace__viewer-panel--maximized');
+                    resizer.style.display = 'flex';
+                    showToast('Оконный режим');
+                }
+            }
+
             function closeViewer() {
                 const treePanel = document.getElementById('treePanel');
                 const viewerPanel = document.getElementById('viewerPanel');
                 const runnerFrame = document.getElementById('runnerFrame');
+                const resizer = document.getElementById('workspaceResizer');
 
                 treePanel.classList.remove('explorer-workspace__tree-panel--previewing');
+                treePanel.classList.remove('explorer-workspace__tree-panel--hidden');
                 viewerPanel.classList.remove('explorer-workspace__viewer-panel--active');
+                viewerPanel.classList.remove('explorer-workspace__viewer-panel--maximized');
+                resizer.classList.remove('explorer-workspace__resizer--active');
+
                 runnerFrame.src = 'about:blank';
                 activeUrl = null;
 
                 document.querySelectorAll('.tree-node__row').forEach(row => {
                     row.classList.remove('tree-node__row--active');
+                });
+            }
+
+            function initResizer() {
+                const resizer = document.getElementById('workspaceResizer');
+                const treePanel = document.getElementById('treePanel');
+                const dragShield = document.getElementById('dragShield');
+                const workspace = document.getElementById('explorerWorkspace');
+
+                resizer.addEventListener('mousedown', function(e) {
+                    isDragging = true;
+                    startX = e.clientX;
+                    startWidth = treePanel.getBoundingClientRect().width;
+                    resizer.classList.add('explorer-workspace__resizer--dragging');
+                    dragShield.classList.add('explorer-workspace__overlay-drag-shield--active');
+                    document.body.style.cursor = 'col-resize';
+                    e.preventDefault();
+                });
+
+                window.addEventListener('mousemove', function(e) {
+                    if (!isDragging) return;
+                    const deltaX = e.clientX - startX;
+                    const workspaceWidth = workspace.getBoundingClientRect().width;
+                    let newWidth = startWidth + deltaX;
+
+                    // Keep bounds: minimum 320px, maximum 75% of workspace
+                    if (newWidth < 320) newWidth = 320;
+                    if (newWidth > workspaceWidth - 300) newWidth = workspaceWidth - 300;
+
+                    treePanel.style.width = newWidth + 'px';
+                    treePanel.style.flex = '0 0 ' + newWidth + 'px';
+                });
+
+                window.addEventListener('mouseup', function() {
+                    if (isDragging) {
+                        isDragging = false;
+                        resizer.classList.remove('explorer-workspace__resizer--dragging');
+                        dragShield.classList.remove('explorer-workspace__overlay-drag-shield--active');
+                        document.body.style.cursor = '';
+                    }
                 });
             }
 
@@ -931,6 +1141,8 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
                 }, 2200);
             }
 
+            window.addEventListener('DOMContentLoaded', initResizer);
+
             return {
                 toggle: toggle,
                 expandAll: expandAll,
@@ -938,7 +1150,9 @@ function renderTreeNodes(array $treeData, int $depth = 0, string $parentUid = 'r
                 filterSearch: filterSearch,
                 runFile: runFile,
                 reloadFrame: reloadFrame,
-                closeViewer: closeViewer
+                closeViewer: closeViewer,
+                toggleSidebar: toggleSidebar,
+                toggleMaximize: toggleMaximize
             };
         })();
     </script>
