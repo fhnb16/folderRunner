@@ -131,9 +131,3 @@ All visual styling is controlled through CSS Custom Properties (variables) in th
 This tool is designed specifically for **local development and staging sandboxes**. It directly lists and allows execution/display of files within its directory hierarchy. 
 
 > ⚠️ **Warning**: Do not deploy this script to public production servers without adding authentication (e.g., HTTP Basic Auth, IP allowlisting) to prevent unauthorized file discovery or arbitrary execution.
-
----
-
-## 📄 License
-
-This project is open-source and available under the [MIT License](https://opensource.org/licenses/MIT). You are free to modify, distribute, and embed it into your local toolchains.
