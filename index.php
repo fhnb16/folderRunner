@@ -4,7 +4,7 @@
  *
  * Один файл без зависимостей. Оформление — темы каталога fhnb16/theme-catalog:
  * каркас base.css и темы лежат блоком данных в конце файла (после
- * __halt_compiler), его пишет tools/build.php. Код ниже блок не меняет.
+ * __halt_compiler), его пишет tools/build.py. Код ниже блок не меняет.
  */
 
 declare(strict_types=1);

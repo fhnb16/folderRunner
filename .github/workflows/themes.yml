@@ -1,9 +1,10 @@
 # Темы из fhnb16/theme-catalog → блок данных index.php.
 #
-# Берёт base.css и themes/*.css из каталога, проверяет темы, пересобирает
-# index.php и, если он изменился, коммитит. Заодно собирает по index.php на
-# каждую тему (dist/<id>/index.php, тема закреплена) — артефактом сборки, а на
-# теге v* — архивами в релиз.
+# Сборкой занимается Python из образа раннера (tools/build.py, только
+# стандартная библиотека): берёт base.css и themes/*.css из каталога,
+# проверяет темы, пересобирает index.php и, если он изменился, коммитит.
+# Заодно собирает по index.php на каждую тему (тема закреплена) — zip-архивами
+# в артефакт сборки, а на теге v* — в релиз.
 #
 # Новая тема в каталоге подхватывается раз в сутки, вручную (Run workflow) или
 # сразу, если каталог шлёт repository_dispatch с типом themes-updated.
@@ -44,52 +45,42 @@ jobs:
           repository: fhnb16/theme-catalog
           path: .catalog
 
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          tools: none
-
       - name: Сборка
         id: build
         run: |
-          rev=$(git -C .catalog rev-parse --short HEAD)
-          echo "rev=$rev" >> "$GITHUB_OUTPUT"
-          php tools/build.php --catalog .catalog --rev "$rev" --dist dist
-          php -l index.php
-          echo "themes=$(ls dist | wc -l)" >> "$GITHUB_OUTPUT"
+          python3 tools/build.py \
+            --catalog .catalog \
+            --rev "$(git -C .catalog rev-parse --short HEAD)" \
+            --zip release
 
-      - name: Проверка в браузерном режиме
+      # PHP в образе ubuntu-latest уже есть; если его не окажется, шаг
+      # пропускается, а не ставит что-то сверху.
+      - name: Проверка страницы и тем
         run: |
+          if ! command -v php >/dev/null; then
+            echo "::notice::php в образе нет — проверка страницы пропущена"
+            exit 0
+          fi
+          php -l index.php
           mkdir -p /tmp/site/demo && cp index.php /tmp/site/
           echo '<h1>ok</h1>' > /tmp/site/demo/page.html
           php -S 127.0.0.1:8080 -t /tmp/site >/dev/null 2>&1 &
           sleep 1
           curl -fsS http://127.0.0.1:8080/ | grep -q 'demo/page.html'
           curl -fsS 'http://127.0.0.1:8080/?fr=base.css' -o /dev/null -w '%{content_type}\n' | grep -q 'text/css'
-          for id in $(ls dist); do
+          for id in ${{ steps.build.outputs.ids }}; do
             curl -fsS "http://127.0.0.1:8080/?fr=theme.css&id=$id" | grep -q "data-skin=\"$id\""
           done
           echo "ok: страница, каркас и ${{ steps.build.outputs.themes }} тем"
 
       - name: Коммит index.php
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/master' && steps.build.outputs.changed == 'true'
         run: |
-          if git diff --quiet -- index.php; then
-            echo "index.php не изменился"
-            exit 0
-          fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.php
-          git commit -m "themes: каталог ${{ steps.build.outputs.rev }} (${{ steps.build.outputs.themes }} тем)"
+          git commit -m "themes: каталог $(git -C .catalog rev-parse --short HEAD) (${{ steps.build.outputs.themes }} тем)"
           git push
-
-      - name: Архивы тем
-        run: |
-          mkdir -p release
-          (cd dist && for id in *; do (cd "$id" && zip -q "../../release/folderRunner-$id.zip" index.php); done)
-          zip -q -j release/folderRunner.zip index.php
-          (cd dist && zip -q -r ../release/folderRunner-all-themes.zip .)
 
       - uses: actions/upload-artifact@v4
         with:

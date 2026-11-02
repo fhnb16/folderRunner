@@ -84,7 +84,7 @@ Every [release](../../releases) (and every run of the `themes` workflow, under *
 ## 🎨 Themes
 
 ### How it works
-`index.php` is code plus a data block. Everything after the `__halt_compiler();` line is JSON written by `tools/build.php`: the catalog's `base.css` and every theme with its passport. The page loads only the framework and the selected theme, served by `index.php` itself (`?fr=base.css`, `?fr=theme.css&id=<id>`, long-cached).
+`index.php` is code plus a data block. Everything after the `__halt_compiler();` line is JSON written by `tools/build.py`: the catalog's `base.css` and every theme with its passport. The page loads only the framework and the selected theme, served by `index.php` itself (`?fr=base.css`, `?fr=theme.css&id=<id>`, long-cached).
 
 Do not edit the data block by hand — edit the code above it and rebuild.
 
@@ -94,17 +94,20 @@ Do not edit the data block by hand — edit the code above it and rebuild.
 
 A theme without a `/*!theme … */` passport, with an `id` that differs from the file name, or missing any of the 46 required tokens is skipped with a warning; the build does not fail because of one theme.
 
-### Building locally
+### Building
+Builds are done by `tools/build.py` — Python 3.8+, standard library only. Normally you don't run it yourself: push and let GitHub Actions rebuild. To build locally:
+
 ```bash
 git clone https://github.com/fhnb16/theme-catalog ../theme-catalog
-php tools/build.php --catalog ../theme-catalog            # rewrite the data block of index.php
-php tools/build.php --catalog ../theme-catalog --dist dist # plus dist/<id>/index.php per theme
-php tools/build.php --catalog ../theme-catalog --check     # exit 1 if index.php is stale
+python3 tools/build.py --catalog ../theme-catalog               # rewrite the data block of index.php
+python3 tools/build.py --catalog ../theme-catalog --dist dist   # plus dist/<id>/index.php per theme
+python3 tools/build.py --catalog ../theme-catalog --zip release # release zips
+python3 tools/build.py --catalog ../theme-catalog --check       # exit 1 if index.php is stale
 ```
 `--catalog` also accepts the catalog's single-file Markdown export (the «Единый md» button): `### base.css` and `### themes/<id>.css` sections are read from it.
 
 ### GitHub Actions
-`.github/workflows/themes.yml` runs on push, daily, manually and on `repository_dispatch` (`themes-updated`). It checks out the catalog, rebuilds, smoke-tests the page and every theme stylesheet under `php -S`, commits `index.php` if it changed, uploads the single-theme zips as an artifact and attaches them to the release for `v*` tags.
+`.github/workflows/themes.yml` runs on push, daily, manually and on `repository_dispatch` (`themes-updated`). It uses only what the runner image already has: checks out the catalog, rebuilds with `python3`, smoke-tests the page and every theme stylesheet under the image's `php -S` (skipped if PHP is absent), commits `index.php` if it changed, uploads the release zips as an artifact and attaches them to the release for `v*` tags.
 
 To rebuild right after the catalog changes, add a step to the catalog's workflow that sends the dispatch (needs a token with access to this repository in the catalog's secrets):
 

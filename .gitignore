@@ -1,2 +1,4 @@
 /dist/
+/release/
 /.catalog/
+__pycache__/
