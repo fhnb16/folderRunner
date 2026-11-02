@@ -19,9 +19,10 @@ Built with **BEM methodology**, **zero third-party dependencies**, a fluid layou
   - Skips hidden files and folders (`.git` and the like) and the runner script itself.
   - Links are URL-encoded per path segment, so names with spaces, `#`, `&`, `%` or Cyrillic open correctly.
 
-- **Themes & Configurator** (palette button in the top bar):
-  - 26 themes from the catalog — Patch (the classic Steam look, default), Gloss, Frost, Metro, Material 3, Fluent, Olive (Windows 98 in light mode), GRiD, MMO, Vapor and more.
-  - Light / dark / system mode, accent colour (presets or any colour), solid bars.
+- **Themes** — three editions of the same `index.php`:
+  - **Base** (the file in this repository): the Patch theme (the classic Steam look) with a light/dark toggle in the top bar.
+  - **Single theme** (releases): one of 26 catalog themes with a configurator — light / dark / system mode, accent colour (presets or any colour), solid bars, theme description.
+  - **All themes** (releases): every theme — Patch, Gloss, Frost, Metro, Material 3, Fluent, Olive (Windows 98 in light mode), GRiD, MMO, Vapor and more — switchable in the configurator.
   - Applied live, remembered in cookies, rendered server-side on the next load — no flash of the default theme.
 
 - **Fluid Layout**:
@@ -77,11 +78,12 @@ php -S localhost:8080
 Visit [http://localhost:8080](http://localhost:8080) in your web browser.
 
 ### Downloads
-The [`latest` release](../../releases/tag/latest) is rebuilt automatically whenever the themes change:
+`index.php` in this repository is the base edition: Patch, light/dark only. The themed editions are in the [`latest` release](../../releases/tag/latest), rebuilt automatically whenever the themes change:
 
-- `folderRunner.zip` — `index.php` with all themes and the configurator;
-- `folderRunner-<theme>.zip` — the same `index.php` with one theme locked in (the configurator keeps mode, accent and solid bars, but hides the theme list);
-- `folderRunner-all-themes.zip` — every single-theme variant at once.
+- `folderRunner-all-themes.zip` — all themes and the full configurator;
+- `folderRunner-<theme>.zip` — one theme with the configurator: light/dark/system, accent, solid bars, description;
+- `folderRunner-single-themes.zip` — every single-theme edition at once;
+- `folderRunner.zip` — the base edition, same as in the repository.
 
 Versioned releases are made by pushing a tag: `git tag v1.2.0 && git push origin v1.2.0`.
 
@@ -90,7 +92,7 @@ Versioned releases are made by pushing a tag: `git tag v1.2.0 && git push origin
 ## 🎨 Themes
 
 ### How it works
-`index.php` is code plus a data block. Everything after the `__halt_compiler();` line is JSON written by `tools/build.py`: the catalog's `base.css` and every theme with its passport. The page loads only the framework and the selected theme, served by `index.php` itself (`?fr=base.css`, `?fr=theme.css&id=<id>`, long-cached).
+`index.php` is code plus a data block. Everything after the `__halt_compiler();` line is JSON written by `tools/build.py`: the catalog's `base.css`, the themes with their passports and the edition (`base`, `theme` or `all`). The code is the same in every edition; the data decides what is shown. The page loads only the framework and the selected theme, served by `index.php` itself (`?fr=base.css`, `?fr=theme.css&id=<id>`, long-cached).
 
 Do not edit the data block by hand — edit the code above it and rebuild.
 
@@ -105,15 +107,16 @@ Builds are done by `tools/build.py` — Python 3.8+, standard library only. Norm
 
 ```bash
 git clone https://github.com/fhnb16/theme-catalog ../theme-catalog
-python3 tools/build.py --catalog ../theme-catalog               # rewrite the data block of index.php
-python3 tools/build.py --catalog ../theme-catalog --dist dist   # plus dist/<id>/index.php per theme
+python3 tools/build.py --catalog ../theme-catalog               # base edition into index.php
+python3 tools/build.py --catalog ../theme-catalog --dist dist   # plus dist/all-themes/ and dist/themes/<id>/
 python3 tools/build.py --catalog ../theme-catalog --zip release # release zips
+python3 tools/build.py --catalog ../theme-catalog --base-skin gloss  # another theme for the base edition
 python3 tools/build.py --catalog ../theme-catalog --check       # exit 1 if index.php is stale
 ```
 `--catalog` also accepts the catalog's single-file Markdown export (the «Единый md» button): `### base.css` and `### themes/<id>.css` sections are read from it.
 
 ### GitHub Actions
-`.github/workflows/themes.yml` runs on push, daily, manually and on `repository_dispatch` (`themes-updated`). It uses only what the runner image already has: checks out the catalog, rebuilds with `python3`, smoke-tests the page and every theme stylesheet under the image's `php -S` (skipped if PHP is absent), commits `index.php` if it changed, uploads the zips as an artifact, refreshes the `latest` release when the themes changed (or it doesn't exist yet) and publishes a versioned release for `v*` tags. Releases are made with the runner's `gh` CLI.
+`.github/workflows/themes.yml` runs on push, daily, manually and on `repository_dispatch` (`themes-updated`). It uses only what the runner image already has: checks out the catalog, rebuilds with `python3`, smoke-tests all three editions and every theme stylesheet under the image's `php -S` (skipped if PHP is absent), commits the base `index.php` if it changed, uploads the zips as an artifact, refreshes the `latest` release when the themes changed (or it doesn't exist yet) and publishes a versioned release for `v*` tags. Releases are made with the runner's `gh` CLI.
 
 The catalog repository is private, so the workflow needs the `CATALOG_TOKEN` secret (*Settings → Secrets and variables → Actions*): a fine-grained personal access token with access to `fhnb16/theme-catalog` only and *Contents: Read-only*. Without it the run stops at «Доступ к каталогу» with an explanation. If the catalog is made public, the secret is not needed.
 
@@ -132,7 +135,7 @@ curl -X POST -H "Authorization: Bearer $FOLDER_RUNNER_TOKEN" \
 At the top of `index.php`:
 
 ```php
-const FR_DEFAULT_SKIN = 'patch';               // theme for first-time visitors
+const FR_DEFAULT_SKIN = 'patch';               // all-themes edition: theme for first-time visitors
 const FR_EXTENSIONS = ['html', 'htm', 'php'];  // scanned extensions
 ```
 
@@ -144,7 +147,7 @@ The shell uses the catalog's blocks where themes give them character, and its ow
 
 | Block / Element | Description |
 | :--- | :--- |
-| `.nav-bar` (catalog) | Top bar: home, theme configurator, rescan |
+| `.nav-bar` (catalog) | Top bar: home, light/dark toggle (base) or theme configurator, rescan |
 | `.fr-toolbar` | Search (`.search__box`), expand/collapse (`.btn`), stats line |
 | `.fr-work` | Grid workspace: list, resizer, viewer; `--open`, `--tree-hidden`, `--pane-view` |
 | `.fr-tree`, `.fr-dir`, `.fr-file` | Recursive tree: folders on `<details>`, file rows with container-query layouts |

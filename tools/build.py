@@ -5,23 +5,32 @@
 данных в конец index.php (после __halt_compiler). Код приложения выше блока
 не трогает. Только стандартная библиотека Python 3.8+.
 
+Редакции (поле edition в данных) — код один, различаются данные:
+  base   — index.php в репозитории: одна тема (--base-skin, по умолчанию
+           patch) без описания, только переключатель светлая/тёмная;
+  theme  — по файлу на тему: тема закреплена, конфигуратор с режимами,
+           акцентом, сплошными панелями и описанием;
+  all    — все темы и полный конфигуратор.
+
     python3 tools/build.py --catalog <папка каталога | единый md каталога>
                            [--local themes] [--target index.php]
-                           [--dist dist] [--zip release] [--rev <sha>] [--check]
+                           [--base-skin patch] [--dist dist] [--zip release]
+                           [--rev <sha>] [--check]
 
---catalog  папка с base.css и themes/*.css или единый md каталога
-           (разделы «### base.css» и «### themes/<id>.css» из «Исходников»);
---local    папка своих тем: *.css дописывают каталог или заменяют тему
-           с тем же id (по умолчанию themes/ рядом с index.php);
---dist     дополнительно собрать <dist>/<id>/index.php — по файлу на тему,
-           тема в нём закреплена;
---zip      архивы для релиза: folderRunner.zip, folderRunner-<id>.zip и
-           folderRunner-all-themes.zip;
---rev      ревизия каталога, попадает в блок данных;
---check    ничего не писать, выйти с кодом 1, если index.php устарел.
+--catalog    папка с base.css и themes/*.css или единый md каталога
+             (разделы «### base.css» и «### themes/<id>.css» из «Исходников»);
+--local      папка своих тем: *.css дописывают каталог или заменяют тему
+             с тем же id (по умолчанию themes/ рядом с index.php);
+--target     куда писать базовую редакцию (по умолчанию index.php);
+--dist       собрать <dist>/all-themes/index.php и <dist>/themes/<id>/index.php;
+--zip        архивы для релиза: folderRunner.zip (базовая),
+             folderRunner-all-themes.zip, folderRunner-<id>.zip и
+             folderRunner-single-themes.zip (все версии с одной темой разом);
+--rev        ревизия каталога, попадает в блок данных;
+--check      ничего не писать, выйти с кодом 1, если index.php устарел.
 
 В GitHub Actions пишет в $GITHUB_OUTPUT: themes (число), ids (через пробел),
-changed (true/false).
+changed (true/false — изменился ли index.php в репозитории).
 """
 import argparse
 import hashlib
@@ -177,6 +186,7 @@ def main():
     parser.add_argument('--catalog', required=True, type=Path)
     parser.add_argument('--local', type=Path, default=root / 'themes')
     parser.add_argument('--target', type=Path, default=root / 'index.php')
+    parser.add_argument('--base-skin', default='patch')
     parser.add_argument('--dist', type=Path)
     parser.add_argument('--zip', type=Path)
     parser.add_argument('--rev')
@@ -205,62 +215,70 @@ def main():
     if not themes:
         fail('ни одной годной темы')
 
-    digest = hashlib.sha1((catalog['base'] + ''.join(t['css'] for t in themes.values())).encode('utf-8'))
-    data = {
-        'format': 1,
-        'rev': args.rev,
-        'hash': digest.hexdigest()[:12],
-        'lock': None,
-        'base': catalog['base'],
-        'themes': themes,
-    }
+    print('тем: %d (%s)' % (len(themes), ', '.join(themes)))
+    if args.base_skin not in themes:
+        fail('тема базовой редакции «%s» не собрана' % args.base_skin)
+
+    def edition(kind, subset, lock=None):
+        """Блок данных редакции: каркас и выбранные темы."""
+        digest = hashlib.sha1((catalog['base'] + ''.join(t['css'] for t in subset.values())).encode('utf-8'))
+        return {
+            'format': 1,
+            'edition': kind,
+            'rev': args.rev,
+            'hash': digest.hexdigest()[:12],
+            'lock': lock,
+            'base': catalog['base'],
+            'themes': subset,
+        }
+
+    # Базовая редакция: одна тема без описания — переключатель светлая/тёмная.
+    base_theme = themes[args.base_skin]
+    base_meta = {k: v for k, v in base_theme['meta'].items() if k != 'description'}
+    base = edition('base', {args.base_skin: {'meta': base_meta, 'css': base_theme['css']}}, args.base_skin)
 
     current, code, old = split_target(args.target)
-    before = list((old or {}).get('themes', {}))
-    added = [t for t in themes if t not in before]
-    removed = [t for t in before if t not in themes]
-    print('тем: %d (%s)' % (len(themes), ', '.join(themes)))
-    if added:
-        print('добавлены: ' + ', '.join(added))
-    if removed:
-        warn('убраны: ' + ', '.join(removed))
 
     if args.check:
         # Ревизия каталога не делает файл устаревшим — сравниваем содержимое.
-        same = current == code + '\n' + encode(dict(data, rev=(old or {}).get('rev')))
+        same = current == code + '\n' + encode(dict(base, rev=(old or {}).get('rev')))
         print('index.php актуален' if same else 'index.php устарел: запустите tools/build.py')
         sys.exit(0 if same else 1)
 
-    nxt = code + '\n' + encode(data)
+    nxt = code + '\n' + encode(base)
     changed = nxt != current
     if changed:
         write(args.target, nxt)
-        print('записан %s' % args.target)
+        print('записан %s (базовая редакция, тема %s)' % (args.target, args.base_skin))
     else:
         print('%s не изменился' % args.target)
 
-    # Вариант с одной закреплённой темой: тот же код, в данных одна тема.
+    # Редакции для релиза: тот же код, другие данные.
+    everything = code + '\n' + encode(edition('all', themes))
     singles = {
-        theme_id: code + '\n' + encode(dict(data, lock=theme_id, themes={theme_id: theme}))
+        theme_id: code + '\n' + encode(edition('theme', {theme_id: theme}, theme_id))
         for theme_id, theme in themes.items()
     }
 
     if args.dist:
+        write(args.dist / 'all-themes' / 'index.php', everything)
         for theme_id, text in singles.items():
-            write(args.dist / theme_id / 'index.php', text)
-        print('собрано в %s: %d файлов' % (args.dist, len(singles)))
+            write(args.dist / 'themes' / theme_id / 'index.php', text)
+        print('собрано в %s: все темы и %d с одной темой' % (args.dist, len(singles)))
 
     if args.zip:
         args.zip.mkdir(parents=True, exist_ok=True)
         options = {'compression': zipfile.ZIP_DEFLATED, 'compresslevel': 9}
         with zipfile.ZipFile(args.zip / 'folderRunner.zip', 'w', **options) as z:
             z.writestr('index.php', nxt)
-        with zipfile.ZipFile(args.zip / 'folderRunner-all-themes.zip', 'w', **options) as everything:
+        with zipfile.ZipFile(args.zip / 'folderRunner-all-themes.zip', 'w', **options) as z:
+            z.writestr('index.php', everything)
+        with zipfile.ZipFile(args.zip / 'folderRunner-single-themes.zip', 'w', **options) as pack:
             for theme_id, text in singles.items():
                 with zipfile.ZipFile(args.zip / ('folderRunner-%s.zip' % theme_id), 'w', **options) as z:
                     z.writestr('index.php', text)
-                everything.writestr('%s/index.php' % theme_id, text)
-        print('архивы в %s: %d' % (args.zip, len(singles) + 2))
+                pack.writestr('%s/index.php' % theme_id, text)
+        print('архивы в %s: %d' % (args.zip, len(singles) + 3))
 
     github_output(themes=len(themes), ids=' '.join(themes), changed='true' if changed else 'false')
 

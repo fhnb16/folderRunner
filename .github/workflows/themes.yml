@@ -1,10 +1,11 @@
 # Темы из fhnb16/theme-catalog → блок данных index.php.
 #
 # Сборкой занимается Python из образа раннера (tools/build.py, только
-# стандартная библиотека): берёт base.css и themes/*.css из каталога,
-# проверяет темы, пересобирает index.php и, если он изменился, коммитит.
-# Заодно собирает по index.php на каждую тему (тема закреплена) — zip-архивами
-# в артефакт сборки и в релизы:
+# стандартная библиотека): берёт base.css и themes/*.css из каталога и
+# проверяет темы. В репозиторий коммитится базовая редакция index.php (тема
+# Patch, только светлая/тёмная). Редакция со всеми темами и по редакции на
+# каждую тему (конфигуратор: режимы, акцент, описание) — zip-архивами в
+# артефакт сборки и в релизы:
 #   latest — постоянный релиз, обновляется сборкой на master, когда темы
 #            изменились (или релиза ещё нет); тег latest переезжает на
 #            свежий коммит;
@@ -74,6 +75,7 @@ jobs:
           python3 tools/build.py \
             --catalog .catalog \
             --rev "$(git -C .catalog rev-parse --short HEAD)" \
+            --dist dist \
             --zip release
 
       # PHP в образе ubuntu-latest уже есть; если его не окажется, шаг
@@ -84,17 +86,32 @@ jobs:
             echo "::notice::php в образе нет — проверка страницы пропущена"
             exit 0
           fi
+          ids="${{ steps.build.outputs.ids }}"
+          first=${ids%% *}
           php -l index.php
-          mkdir -p /tmp/site/demo && cp index.php /tmp/site/
+          php -l dist/all-themes/index.php
+          # Базовая редакция в корне, все темы в all/, одна тема в one/.
+          mkdir -p /tmp/site/demo /tmp/site/all /tmp/site/one
+          cp index.php /tmp/site/
+          cp dist/all-themes/index.php /tmp/site/all/
+          cp "dist/themes/$first/index.php" /tmp/site/one/
           echo '<h1>ok</h1>' > /tmp/site/demo/page.html
           php -S 127.0.0.1:8080 -t /tmp/site >/dev/null 2>&1 &
           sleep 1
-          curl -fsS http://127.0.0.1:8080/ | grep -q 'demo/page.html'
-          curl -fsS 'http://127.0.0.1:8080/?fr=base.css' -o /dev/null -w '%{content_type}\n' | grep -q 'text/css'
-          for id in ${{ steps.build.outputs.ids }}; do
-            curl -fsS "http://127.0.0.1:8080/?fr=theme.css&id=$id" | grep -q "data-skin=\"$id\""
+          # Ответы — в файл и только потом grep: grep -q в конвейере закрывает
+          # канал раньше, чем curl допишет, и pipefail роняет шаг.
+          get() { curl -fsS -o /tmp/r "http://127.0.0.1:8080/$1"; }
+          has() { grep -q -- "$1" /tmp/r || { echo "::error::нет «$1» в ответе $2"; exit 1; }; }
+          get '';                       has 'demo/page.html' 'базовой'; has 'data-act="mode"' 'базовой'
+          if grep -q 'id="frModal"' /tmp/r; then echo "::error::в базовой редакции есть конфигуратор"; exit 1; fi
+          get '?fr=base.css';           has 'scrollbar' 'base.css'
+          get '?fr=theme.css&id=patch'; has 'data-skin="patch"' 'patch.css'
+          get 'all/';                   has 'id="frModal"' 'all/'
+          for id in $ids; do
+            get "all/?fr=theme.css&id=$id"; has "data-skin=\"$id\"" "$id.css"
           done
-          echo "ok: страница, каркас и ${{ steps.build.outputs.themes }} тем"
+          get 'one/';                   has "data-skin=\"$first\"" 'one/'; has 'id="frModal"' 'one/'
+          echo "ok: базовая редакция, все ${{ steps.build.outputs.themes }} тем, одна тема ($first)"
 
       - name: Коммит index.php
         if: github.ref == 'refs/heads/master' && steps.build.outputs.changed == 'true'
@@ -124,9 +141,10 @@ jobs:
           title="Последняя сборка: ${{ steps.build.outputs.themes }} тем"
           notes="Собрано автоматически из fhnb16/theme-catalog@$rev.
 
-          - folderRunner.zip — index.php со всеми темами и конфигуратором;
-          - folderRunner-<тема>.zip — index.php с одной закреплённой темой;
-          - folderRunner-all-themes.zip — все варианты с одной темой разом.
+          - folderRunner-all-themes.zip — все темы и конфигуратор: тема, режим, акцент, описание;
+          - folderRunner-<тема>.zip — одна тема с конфигуратором: светлая/тёмная, акцент, описание;
+          - folderRunner-single-themes.zip — все версии с одной темой разом;
+          - folderRunner.zip — базовая версия, как в репозитории: Patch, только светлая/тёмная.
 
           Темы: ${{ steps.build.outputs.ids }}"
 
