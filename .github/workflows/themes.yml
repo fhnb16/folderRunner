@@ -4,7 +4,13 @@
 # стандартная библиотека): берёт base.css и themes/*.css из каталога,
 # проверяет темы, пересобирает index.php и, если он изменился, коммитит.
 # Заодно собирает по index.php на каждую тему (тема закреплена) — zip-архивами
-# в артефакт сборки, а на теге v* — в релиз.
+# в артефакт сборки и в релизы:
+#   latest — постоянный релиз, обновляется сборкой на master, когда темы
+#            изменились (или релиза ещё нет); тег latest переезжает на
+#            свежий коммит;
+#   v*     — отдельный релиз на каждый push тега версии (git tag v1.2.0 &&
+#            git push origin v1.2.0).
+# Релизы делает gh из образа раннера.
 #
 # Новая тема в каталоге подхватывается раз в сутки, вручную (Run workflow) или
 # сразу, если каталог шлёт repository_dispatch с типом themes-updated.
@@ -104,8 +110,49 @@ jobs:
           name: folderRunner-themes
           path: release/
 
-      - name: Релиз
+      - name: Релиз latest
+        if: github.ref == 'refs/heads/master'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if [ "${{ steps.build.outputs.changed }}" != true ] && gh release view latest >/dev/null 2>&1; then
+            echo "Темы не изменились — релиз latest актуален"
+            exit 0
+          fi
+          rev=$(git -C .catalog rev-parse --short HEAD)
+          title="Последняя сборка: ${{ steps.build.outputs.themes }} тем"
+          notes="Собрано автоматически из fhnb16/theme-catalog@$rev.
+
+          - folderRunner.zip — index.php со всеми темами и конфигуратором;
+          - folderRunner-<тема>.zip — index.php с одной закреплённой темой;
+          - folderRunner-all-themes.zip — все варианты с одной темой разом.
+
+          Темы: ${{ steps.build.outputs.ids }}"
+
+          # Тег latest — на коммит с только что собранным index.php.
+          git tag -f latest
+          git push -f origin refs/tags/latest
+
+          if gh release view latest >/dev/null 2>&1; then
+            gh release upload latest release/*.zip --clobber
+            # Архивы тем, которых больше нет в каталоге, убираются.
+            for asset in $(gh release view latest --json assets -q '.assets[].name'); do
+              [ -f "release/$asset" ] || gh release delete-asset latest "$asset" -y
+            done
+            gh release edit latest --title "$title" --notes "$notes" --latest
+          else
+            gh release create latest release/*.zip --title "$title" --notes "$notes" --latest
+          fi
+
+      - name: Релиз версии
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: release/*.zip
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" release/*.zip --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" release/*.zip --title "folderRunner $GITHUB_REF_NAME" --generate-notes --verify-tag
+          fi

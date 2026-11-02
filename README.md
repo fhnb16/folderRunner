@@ -76,8 +76,14 @@ php -S localhost:8080
 ### 3. Open in Browser
 Visit [http://localhost:8080](http://localhost:8080) in your web browser.
 
-### Single-theme builds
-Every [release](../../releases) (and every run of the `themes` workflow, under *Artifacts*) has `folderRunner-<theme>.zip`: the same `index.php` with one theme locked in. Its configurator keeps mode, accent and solid bars, but hides the theme list.
+### Downloads
+The [`latest` release](../../releases/tag/latest) is rebuilt automatically whenever the themes change:
+
+- `folderRunner.zip` — `index.php` with all themes and the configurator;
+- `folderRunner-<theme>.zip` — the same `index.php` with one theme locked in (the configurator keeps mode, accent and solid bars, but hides the theme list);
+- `folderRunner-all-themes.zip` — every single-theme variant at once.
+
+Versioned releases are made by pushing a tag: `git tag v1.2.0 && git push origin v1.2.0`.
 
 ---
 
@@ -107,7 +113,7 @@ python3 tools/build.py --catalog ../theme-catalog --check       # exit 1 if inde
 `--catalog` also accepts the catalog's single-file Markdown export (the «Единый md» button): `### base.css` and `### themes/<id>.css` sections are read from it.
 
 ### GitHub Actions
-`.github/workflows/themes.yml` runs on push, daily, manually and on `repository_dispatch` (`themes-updated`). It uses only what the runner image already has: checks out the catalog, rebuilds with `python3`, smoke-tests the page and every theme stylesheet under the image's `php -S` (skipped if PHP is absent), commits `index.php` if it changed, uploads the release zips as an artifact and attaches them to the release for `v*` tags.
+`.github/workflows/themes.yml` runs on push, daily, manually and on `repository_dispatch` (`themes-updated`). It uses only what the runner image already has: checks out the catalog, rebuilds with `python3`, smoke-tests the page and every theme stylesheet under the image's `php -S` (skipped if PHP is absent), commits `index.php` if it changed, uploads the zips as an artifact, refreshes the `latest` release when the themes changed (or it doesn't exist yet) and publishes a versioned release for `v*` tags. Releases are made with the runner's `gh` CLI.
 
 The catalog repository is private, so the workflow needs the `CATALOG_TOKEN` secret (*Settings → Secrets and variables → Actions*): a fine-grained personal access token with access to `fhnb16/theme-catalog` only and *Contents: Read-only*. Without it the run stops at «Доступ к каталогу» with an explanation. If the catalog is made public, the secret is not needed.
 
