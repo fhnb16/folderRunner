@@ -109,6 +109,8 @@ python3 tools/build.py --catalog ../theme-catalog --check       # exit 1 if inde
 ### GitHub Actions
 `.github/workflows/themes.yml` runs on push, daily, manually and on `repository_dispatch` (`themes-updated`). It uses only what the runner image already has: checks out the catalog, rebuilds with `python3`, smoke-tests the page and every theme stylesheet under the image's `php -S` (skipped if PHP is absent), commits `index.php` if it changed, uploads the release zips as an artifact and attaches them to the release for `v*` tags.
 
+The catalog repository is private, so the workflow needs the `CATALOG_TOKEN` secret (*Settings → Secrets and variables → Actions*): a fine-grained personal access token with access to `fhnb16/theme-catalog` only and *Contents: Read-only*. Without it the run stops at «Доступ к каталогу» with an explanation. If the catalog is made public, the secret is not needed.
+
 To rebuild right after the catalog changes, add a step to the catalog's workflow that sends the dispatch (needs a token with access to this repository in the catalog's secrets):
 
 ```bash

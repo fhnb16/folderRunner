@@ -39,11 +39,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Каталог приватный: встроенный токен workflow видит только этот
+      # репозиторий. Нужен секрет CATALOG_TOKEN — fine-grained токен с правом
+      # Contents: Read-only на fhnb16/theme-catalog. Если каталог станет
+      # публичным, секрет не нужен.
+      - name: Доступ к каталогу
+        env:
+          TOKEN: ${{ secrets.CATALOG_TOKEN || github.token }}
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $TOKEN" \
+            https://api.github.com/repos/fhnb16/theme-catalog)
+          if [ "$code" != 200 ]; then
+            echo "::error::Нет доступа к fhnb16/theme-catalog (HTTP $code). Каталог приватный — добавьте в Settings → Secrets and variables → Actions секрет CATALOG_TOKEN: fine-grained токен с доступом к theme-catalog и правом Contents: Read-only. Либо сделайте каталог публичным."
+            exit 1
+          fi
+
       - name: Каталог тем
         uses: actions/checkout@v4
         with:
           repository: fhnb16/theme-catalog
           path: .catalog
+          token: ${{ secrets.CATALOG_TOKEN || github.token }}
+          persist-credentials: false
 
       - name: Сборка
         id: build
